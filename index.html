@@ -203,6 +203,17 @@ table.cmp .n{font-variant-numeric:tabular-nums; white-space:nowrap;}
 </div>
 
 <script>
+window.addEventListener("error", function(ev){
+  var w = document.getElementById("mapwrap");
+  if(!w || document.getElementById("booterr")) return;
+  var d = document.createElement("div");
+  d.id = "booterr";
+  d.style.cssText = "position:absolute;z-index:9;left:12px;top:52px;max-width:320px;background:#fff6f4;color:#7a2e26;border:1px solid #d9a49b;border-radius:10px;padding:10px 12px;font:13px/1.4 system-ui";
+  d.textContent = "Something in the page failed to start: " + (ev && ev.message ? ev.message : "unknown error");
+  w.appendChild(d);
+});
+</script>
+<script>
 "use strict";
 /* ---------- projection ---------- */
 const S = 420, LON0 = 6.45, LATTOP = 47.85;
@@ -403,6 +414,7 @@ function el(tag, attrs, parent){
   if(parent) parent.appendChild(e);
   return e;
 }
+function clearNode(n){ while(n.firstChild) n.removeChild(n.firstChild); }
 function pathFrom(pts, close){
   let d = "";
   pts.forEach((p,i)=>{ const [x,y]=P(p[0],p[1]); d += (i? "L":"M") + x.toFixed(1) + " " + y.toFixed(1); });
@@ -414,12 +426,6 @@ const layers = {};
 /* water */
 for(const k in LAKES) el("path",{d:pathFrom(LAKES[k],true), class:"lake"}, layers.water);
 for(const k in RIVERS) el("path",{d:pathFrom(RIVERS[k],false), class:"river"}, layers.water);
-WLABELS.forEach(([t,la,lo])=>{
-  marker(layers.water, la, lo, "wl", 0.3, p=>{
-    const tx = el("text",{x:0, y:0, class:"wlabel", "text-anchor":"middle"}, p);
-    tx.textContent = t;
-  });
-});
 /* rails */
 const railEls = {};
 for(const k in RAILS){
@@ -465,6 +471,13 @@ const glyph = {
  heart(p){ el("path",{d:"M0 4.8 C-5.6 0.8 -6 -2.6 -3.4 -4.1 C-1.7 -5.1 -0.3 -3.9 0 -2.9 C0.3 -3.9 1.7 -5.1 3.4 -4.1 C6 -2.6 5.6 0.8 0 4.8 Z", fill:"var(--heart)", stroke:"var(--panel)", "stroke-width":1.2}, p); },
  house(p){ el("path",{d:"M-6 0 L0 -5.8 L6 0 V6 H1.8 V1.8 H-1.8 V6 H-6 Z", fill:"var(--home)", stroke:"var(--panel)", "stroke-width":1.2}, p); }
 };
+/* lake names (registered as markers so they keep their size at every zoom) */
+WLABELS.forEach(([t,la,lo])=>{
+  marker(layers.water, la, lo, "wl", 0.3, p=>{
+    const tx = el("text",{x:0, y:0, class:"wlabel", "text-anchor":"middle"}, p);
+    tx.textContent = t;
+  });
+});
 /* context cities; the three big ones get labels nudged away from the clinic caps */
 const CTXLAB = {Bern:{anchor:"start",x:9,y:11}, "Zürich":{anchor:"end",x:-9,y:-8}, Basel:{anchor:"end",x:-9,y:11}};
 CTX.forEach(([name,la,lo,sz])=>{
@@ -617,7 +630,8 @@ function zoomAt(cx, cy, f){
 }
 document.getElementById("zin").onclick = ()=>{ const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.5); };
 document.getElementById("zout").onclick = ()=>{ const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.5); };
-new ResizeObserver(()=>applyView()).observe(svg);
+if(typeof ResizeObserver !== "undefined"){ try{ new ResizeObserver(()=>applyView()).observe(svg); }catch(e){} }
+window.addEventListener("resize", applyView);
 
 /* ---------- scenario logic ---------- */
 const app = document.getElementById("app");
@@ -632,7 +646,7 @@ function fmtMin(m){ return m>=60? Math.floor(m/60)+"h"+String(m%60).padStart(2,"
 
 function clearSel(){
   selected = null;
-  layers.commute.replaceChildren();
+  clearNode(layers.commute);
   detail.classList.remove("open");
   document.querySelectorAll("#map .mk.sel").forEach(m=>m.classList.remove("sel"));
   document.querySelectorAll(".card.sel").forEach(c=>c.classList.remove("sel"));
@@ -687,7 +701,7 @@ function badgeName(b){ return b==="top"? "Top pick" : b==="wild"? "Wildcard" : "
 
 const LABEL_BELOW = {kehrsatz:1, wabern2:1, wollishofen:1};
 function renderCands(){
-  layers.cands.replaceChildren();
+  clearNode(layers.cands);
   for(let i=markers.length-1;i>=0;i--){ if(markers[i].cand) markers.splice(i,1); }
   candEls = {};
   if(SC==="start") return;
@@ -713,7 +727,7 @@ function renderCands(){
   });
 }
 function renderFrames(){
-  framesBox.replaceChildren();
+  clearNode(framesBox);
   FRAMES[SC].forEach(([name,b],i)=>{
     const btn = document.createElement("button");
     btn.textContent = name;
