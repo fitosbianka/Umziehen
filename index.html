@@ -1,0 +1,907 @@
+<title>Our Next Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f5f1e8; --panel:#fbf8f1; --card:#f3eee1; --ink:#2c2921; --muted:#7f7867; --faint:#a59d8a;
+  --line:#e2dbc9; --line2:#d2c9b2;
+  --map:#eee8d9; --water:#c5dae4; --watere:#9dbecd; --rail:#b7ad97;
+  --bern:#2f7a4e; --zurich:#22679f; --basel:#a8463d;
+  --her:#7d4f8c; --gold:#a07316; --wild:#bd6a1c; --heart:#b95e6c; --home:#857d69;
+  --chipbg:#efe9d8; --shadow:0 10px 30px rgba(60,50,20,.14);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#181712; --panel:#201e17; --card:#272419; --ink:#ebe6d8; --muted:#a69d88; --faint:#7c7563;
+    --line:#373327; --line2:#453f2f;
+    --map:#1d1c15; --water:#233c4a; --watere:#3d637b; --rail:#5a5442;
+    --bern:#63b287; --zurich:#649fd0; --basel:#d3806f;
+    --her:#b78fc7; --gold:#d2a743; --wild:#dc924a; --heart:#da8f9a; --home:#a39a83;
+    --chipbg:#2c2a1f; --shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#181712; --panel:#201e17; --card:#272419; --ink:#ebe6d8; --muted:#a69d88; --faint:#7c7563;
+  --line:#373327; --line2:#453f2f;
+  --map:#1d1c15; --water:#233c4a; --watere:#3d637b; --rail:#5a5442;
+  --bern:#63b287; --zurich:#649fd0; --basel:#d3806f;
+  --her:#b78fc7; --gold:#d2a743; --wild:#dc924a; --heart:#da8f9a; --home:#a39a83;
+  --chipbg:#2c2a1f; --shadow:0 10px 30px rgba(0,0,0,.5);
+}
+html,body{height:100%;}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font:15px/1.55 "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;}
+*{box-sizing:border-box;}
+#app{height:100%; display:flex; flex-direction:column;}
+
+header{display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  padding:12px 18px 10px; border-bottom:1px solid var(--line); background:var(--panel);}
+.brand h1{font-family:"Fraunces", Georgia, serif; font-weight:600; font-size:21px; margin:0; letter-spacing:.2px;}
+.brand p{margin:0; font-size:12.5px; color:var(--muted);}
+nav{display:flex; gap:6px; margin-left:auto; overflow-x:auto; max-width:100%; padding-bottom:2px;}
+nav button{border:1px solid var(--line2); background:var(--chipbg); color:var(--ink);
+  font:600 13px/1 "IBM Plex Sans", sans-serif; padding:9px 14px; border-radius:999px;
+  cursor:pointer; white-space:nowrap; transition:background .15s, color .15s;}
+nav button:hover{border-color:var(--muted);}
+nav button:focus-visible{outline:2px solid var(--her); outline-offset:2px;}
+nav button.on{color:#fff; border-color:transparent;}
+nav button.on[data-s="start"]{background:var(--ink); color:var(--bg);}
+nav button.on[data-s="bern"]{background:var(--bern);}
+nav button.on[data-s="zurich"]{background:var(--zurich);}
+nav button.on[data-s="basel"]{background:var(--basel);}
+
+main{flex:1; display:flex; min-height:0;}
+#mapwrap{flex:1; position:relative; min-width:0; background:var(--map);}
+#map{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab;}
+#map.dragging{cursor:grabbing;}
+
+.overlay{position:absolute; z-index:5; display:flex; gap:6px; align-items:center;}
+#frames{top:10px; left:10px; flex-wrap:wrap; max-width:70%;}
+#frames button, .zbtn{border:1px solid var(--line2); background:var(--panel); color:var(--muted);
+  font:600 12px/1 "IBM Plex Sans", sans-serif; padding:7px 11px; border-radius:999px; cursor:pointer;}
+#frames button.on{color:var(--ink); border-color:var(--muted);}
+#frames button:focus-visible,.zbtn:focus-visible{outline:2px solid var(--her); outline-offset:2px;}
+#zoombtns{top:10px; right:10px; flex-direction:column;}
+.zbtn{width:34px; height:34px; padding:0; font-size:17px; color:var(--ink); border-radius:10px;}
+
+#detail{position:absolute; z-index:6; left:12px; bottom:12px; width:min(360px, calc(100% - 24px));
+  background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow);
+  padding:14px 16px 12px; display:none; max-height:min(56%, 340px); overflow:auto;}
+#detail.open{display:block;}
+#detail .close{position:absolute; top:8px; right:8px; border:0; background:none; color:var(--muted);
+  font-size:17px; cursor:pointer; padding:4px 8px; border-radius:8px;}
+#detail .close:hover{color:var(--ink);}
+#detail h3{font-family:"Fraunces", Georgia, serif; font-size:18px; margin:0 0 2px; padding-right:26px;}
+#detail .tag{color:var(--muted); font-size:13px; margin:0 0 10px;}
+#detail .stats{display:flex; flex-direction:column; gap:5px; margin:0 0 10px;}
+#detail .stat{display:flex; gap:8px; align-items:baseline; font-size:13.5px;}
+#detail .stat b{font-variant-numeric:tabular-nums; white-space:nowrap;}
+#detail .dot{width:9px; height:9px; border-radius:50%; flex:none; position:relative; top:0;}
+#detail .why{font-size:13.5px; margin:0 0 8px;}
+#detail .watch{font-size:13px; color:var(--muted); border-left:3px solid var(--wild); padding:2px 0 2px 10px; margin:0;}
+
+aside{width:410px; flex:none; background:var(--panel); border-left:1px solid var(--line);
+  overflow-y:auto; padding:20px 22px 26px;}
+aside .verdict{font-family:"Fraunces", Georgia, serif; font-size:19px; font-weight:600; line-height:1.4;
+  margin:0 0 6px; text-wrap:balance;}
+aside .verdict em{font-style:normal;}
+.s-bern aside .verdict em{color:var(--bern);} .s-zurich aside .verdict em{color:var(--zurich);}
+.s-basel aside .verdict em{color:var(--basel);} .s-start aside .verdict em{color:var(--her);}
+aside .lede{color:var(--muted); font-size:13.5px; margin:0 0 16px;}
+aside h4{font:600 11.5px/1 "IBM Plex Sans", sans-serif; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--faint); margin:22px 0 10px;}
+aside h4:first-of-type{margin-top:14px;}
+
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px;}
+.chip{background:var(--chipbg); border:1px solid var(--line); color:var(--ink); border-radius:999px;
+  padding:5px 11px; font-size:12.5px;}
+.chip b{font-weight:600;}
+
+.givens{display:flex; flex-direction:column; gap:8px; padding:0; margin:0; list-style:none;}
+.givens li{display:flex; gap:10px; font-size:13.5px; align-items:baseline;}
+.givens .dot{width:10px; height:10px; border-radius:50%; flex:none; transform:translateY(1px);}
+
+.cards{display:flex; flex-direction:column; gap:8px;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:11px 13px;
+  cursor:pointer; text-align:left; width:100%; font:inherit; color:inherit; transition:border-color .15s;}
+.card:hover{border-color:var(--muted);}
+.card:focus-visible{outline:2px solid var(--her); outline-offset:2px;}
+.card.sel{border-color:var(--ink);}
+.card .top{display:flex; align-items:center; gap:8px;}
+.card .name{font-weight:600; font-size:14.5px;}
+.badge{font:600 10.5px/1 "IBM Plex Sans", sans-serif; letter-spacing:.06em; text-transform:uppercase;
+  border-radius:999px; padding:4px 8px;}
+.badge.top{background:var(--gold); color:var(--bg);}
+.badge.good{background:var(--chipbg); color:var(--muted); border:1px solid var(--line2);}
+.badge.wild{background:none; color:var(--wild); border:1px dashed var(--wild);}
+.card .tag{color:var(--muted); font-size:12.5px; margin:3px 0 7px;}
+.card .mins{display:flex; flex-wrap:wrap; gap:5px 14px; font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums;}
+.card .mins b{color:var(--ink); font-weight:600;}
+.card .mins .sw{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px;}
+
+.steps{margin:0; padding-left:21px; display:flex; flex-direction:column; gap:9px; font-size:13.5px;}
+.steps li::marker{color:var(--faint); font-weight:600;}
+.money{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:13.5px;}
+.money p{margin:0 0 6px;} .money p:last-child{margin:0;}
+
+table.cmp{width:100%; border-collapse:collapse; font-size:12.5px;}
+table.cmp th{font:600 10.5px/1.3 "IBM Plex Sans", sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); text-align:left; padding:4px 8px 6px 0;}
+table.cmp td{border-top:1px solid var(--line); padding:7px 8px 7px 0; vertical-align:top;}
+table.cmp td:first-child{font-weight:600;}
+table.cmp .n{font-variant-numeric:tabular-nums; white-space:nowrap;}
+
+.legend{display:grid; grid-template-columns:1fr 1fr; gap:7px 14px; font-size:12.5px; color:var(--muted);}
+.legend div{display:flex; align-items:center; gap:8px;}
+.legend svg{flex:none;}
+.foot{color:var(--faint); font-size:12px; margin-top:22px; border-top:1px solid var(--line); padding-top:12px;}
+.foot p{margin:0 0 6px;}
+
+@media (max-width: 960px){
+  main{flex-direction:column;}
+  #mapwrap{flex:none; height:52vh; min-height:330px;}
+  aside{width:auto; border-left:0; border-top:1px solid var(--line); flex:1;}
+  #frames{max-width:calc(100% - 60px);}
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
+/* map svg */
+#map .lake{fill:var(--water); stroke:var(--watere); stroke-width:1; vector-effect:non-scaling-stroke;}
+#map .river{fill:none; stroke:var(--water); stroke-width:2.4; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round;}
+#map .rail{fill:none; stroke:var(--rail); stroke-width:1.4; stroke-dasharray:7 4; vector-effect:non-scaling-stroke; stroke-linejoin:round; opacity:.75;}
+#map .rail.minor{opacity:.45; stroke-dasharray:3 4;}
+#map .rail.hot{stroke-width:2.6; stroke-dasharray:none; opacity:.95;}
+#map text{font-family:"IBM Plex Sans", sans-serif; paint-order:stroke; stroke:var(--map); stroke-width:3px; fill:var(--muted);}
+#map .mk.wl{cursor:default; pointer-events:none;}
+#map .mk text.wlabel{fill:var(--watere); font-style:italic; stroke:none; font-size:10.5px; font-weight:500; letter-spacing:.04em;}
+#map .ctx circle{fill:var(--faint);}
+#map .ctx text{font-size:11px;}
+#map .ctx.big text{font-size:13px; font-weight:600; fill:var(--ink);}
+#map .ctx.big circle{fill:var(--ink);}
+#map .mk{cursor:pointer;}
+#map .mk text{font-size:11.5px; font-weight:600; fill:var(--ink);}
+#map .mk .sub{font-size:9.5px; font-weight:500; fill:var(--muted);}
+#map .lbl-off text{display:none;}
+#map .mk .halo{fill:none; stroke:var(--ink); stroke-width:2; opacity:0; vector-effect:non-scaling-stroke;}
+#map .mk.sel .halo{opacity:.9;}
+#map .mk:hover .halo{opacity:.45;}
+#map .clinic.dim{opacity:.28;}
+#map .commute{fill:none; stroke-width:2.2; vector-effect:non-scaling-stroke; stroke-dasharray:2 5; stroke-linecap:round;}
+#map .pill rect{fill:var(--panel); stroke:var(--line2);}
+#map .pill text{font-size:10.5px; font-weight:600; stroke:none; fill:var(--ink);}
+</style>
+
+<div id="app" class="s-start">
+  <header>
+    <div class="brand">
+      <h1>Our Next Home</h1>
+      <p>Three cities can say yes to Noah. Here is where each yes could take us.</p>
+    </div>
+    <nav id="tabs" aria-label="Scenario">
+      <button data-s="start" class="on">Start here</button>
+      <button data-s="bern">If Bern says yes</button>
+      <button data-s="zurich">If Zürich says yes</button>
+      <button data-s="basel">If Basel says yes</button>
+    </nav>
+  </header>
+  <main>
+    <div id="mapwrap">
+      <svg id="map" role="application" aria-label="Map of possible places to live"></svg>
+      <div class="overlay" id="frames"></div>
+      <div class="overlay" id="zoombtns">
+        <button class="zbtn" id="zin" aria-label="Zoom in">+</button>
+        <button class="zbtn" id="zout" aria-label="Zoom out">&minus;</button>
+      </div>
+      <div id="detail" role="dialog" aria-label="Place details">
+        <button class="close" aria-label="Close">&times;</button>
+        <div id="detailBody"></div>
+      </div>
+    </div>
+    <aside id="panel"></aside>
+  </main>
+</div>
+
+<script>
+"use strict";
+/* ---------- projection ---------- */
+const S = 420, LON0 = 6.45, LATTOP = 47.85;
+const mercY = lat => Math.log(Math.tan(Math.PI/4 + lat*Math.PI/360)) * 180/Math.PI;
+const Y0 = mercY(LATTOP);
+const P = (lat, lon) => [ (lon - LON0)*S, (Y0 - mercY(lat))*S ];
+
+/* ---------- geography (simplified, hand drawn) ---------- */
+const LAKES = {
+ zuerichsee:[[47.3665,8.5416],[47.3595,8.5448],[47.352,8.5442],[47.3395,8.5535],[47.3272,8.562],[47.3172,8.576],[47.3055,8.5837],[47.2925,8.5924],[47.279,8.6072],[47.266,8.63],[47.254,8.656],[47.243,8.69],[47.233,8.731],[47.2255,8.771],[47.224,8.809],[47.232,8.821],[47.245,8.796],[47.255,8.757],[47.266,8.718],[47.279,8.683],[47.293,8.652],[47.308,8.627],[47.323,8.605],[47.338,8.586],[47.35,8.57],[47.36,8.556]],
+ thunersee:[[46.7565,7.633],[46.744,7.656],[46.73,7.689],[46.715,7.723],[46.7,7.758],[46.689,7.795],[46.683,7.833],[46.685,7.862],[46.7,7.845],[46.713,7.805],[46.726,7.762],[46.739,7.719],[46.75,7.679],[46.758,7.648]],
+ bielersee:[[47.132,7.24],[47.118,7.211],[47.103,7.175],[47.087,7.138],[47.071,7.106],[47.062,7.087],[47.07,7.07],[47.087,7.101],[47.103,7.138],[47.119,7.175],[47.133,7.211],[47.142,7.235]],
+ neuenburgersee:[[46.781,6.644],[46.809,6.715],[46.837,6.783],[46.865,6.85],[46.894,6.913],[46.923,6.97],[46.952,7.018],[46.98,7.053],[46.996,7.056],[46.989,7.023],[46.964,6.969],[46.936,6.913],[46.907,6.853],[46.878,6.79],[46.85,6.725],[46.823,6.662],[46.799,6.616]],
+ murtensee:[[46.918,7.05],[46.926,7.074],[46.937,7.096],[46.95,7.109],[46.956,7.098],[46.948,7.074],[46.936,7.052],[46.925,7.038]],
+ hallwilersee:[[47.256,8.218],[47.27,8.214],[47.286,8.21],[47.301,8.206],[47.312,8.202],[47.313,8.193],[47.3,8.195],[47.284,8.2],[47.268,8.205],[47.256,8.21]],
+ greifensee:[[47.336,8.674],[47.345,8.679],[47.356,8.685],[47.366,8.689],[47.37,8.68],[47.361,8.672],[47.349,8.666],[47.338,8.662]],
+ sempachersee:[[47.127,8.135],[47.138,8.147],[47.15,8.159],[47.161,8.168],[47.165,8.157],[47.154,8.144],[47.141,8.132],[47.13,8.124]]
+};
+const RIVERS = {
+ aareOben:[[46.7565,7.633],[46.776,7.618],[46.805,7.596],[46.842,7.572],[46.873,7.554],[46.899,7.523],[46.913,7.49],[46.926,7.465],[46.934,7.456],[46.943,7.461],[46.949,7.459],[46.953,7.448],[46.959,7.438],[46.968,7.428],[46.972,7.4],[46.97,7.362],[46.976,7.33],[47.0,7.302],[47.045,7.28],[47.06,7.19]],
+ aareUnten:[[47.132,7.243],[47.15,7.3],[47.168,7.37],[47.185,7.44],[47.2,7.5],[47.208,7.54],[47.223,7.61],[47.245,7.68],[47.275,7.75],[47.305,7.82],[47.33,7.87],[47.352,7.908],[47.37,7.96],[47.387,8.01],[47.393,8.05],[47.405,8.1],[47.435,8.15],[47.465,8.2],[47.49,8.23],[47.52,8.245],[47.56,8.232],[47.606,8.235]],
+ rhein:[[47.545,7.79],[47.552,7.73],[47.548,7.68],[47.553,7.64],[47.559,7.613],[47.561,7.592],[47.579,7.585],[47.59,7.559],[47.601,7.53],[47.612,7.505]],
+ limmat:[[47.3665,8.5416],[47.377,8.533],[47.389,8.51],[47.398,8.475],[47.408,8.43],[47.43,8.37],[47.456,8.32],[47.472,8.306],[47.495,8.26],[47.501,8.242]],
+ saane:[[46.74,7.145],[46.775,7.155],[46.806,7.156],[46.833,7.17],[46.865,7.195],[46.901,7.238],[46.933,7.27],[46.962,7.287],[46.972,7.31]],
+ emme:[[47.0,7.74],[47.03,7.68],[47.059,7.628],[47.09,7.59],[47.13,7.56],[47.17,7.548],[47.2,7.535]],
+ reuss:[[47.051,8.311],[47.09,8.29],[47.15,8.275],[47.22,8.26],[47.29,8.255],[47.36,8.26],[47.43,8.27],[47.48,8.255],[47.503,8.245]]
+};
+const RAILS = {
+ guerbetal:{minor:false, pts:[[46.949,7.4393],[46.942,7.433],[46.9352,7.4291],[46.9295,7.4335],[46.92,7.439],[46.9101,7.4427],[46.903,7.456],[46.8921,7.4986],[46.87,7.53],[46.83,7.57],[46.79,7.61],[46.758,7.628]]},
+ s6:{minor:false, pts:[[46.949,7.4393],[46.9436,7.4189],[46.9346,7.4162],[46.927,7.4145],[46.918,7.409],[46.906,7.4],[46.8972,7.396],[46.88,7.375],[46.85,7.355],[46.818,7.344]]},
+ fribourg:{minor:false, pts:[[46.949,7.4393],[46.9436,7.4189],[46.935,7.39],[46.915,7.35],[46.89,7.32],[46.87,7.27],[46.849,7.195],[46.825,7.17],[46.8062,7.156]]},
+ bernOlten:{minor:false, pts:[[46.949,7.4393],[46.97,7.45],[47.0,7.46],[47.025,7.53],[47.0591,7.6273],[47.09,7.68],[47.13,7.7],[47.188,7.71],[47.212,7.788],[47.26,7.85],[47.31,7.895],[47.3519,7.9077]]},
+ oltenZh:{minor:false, pts:[[47.3519,7.9077],[47.38,7.98],[47.3925,8.0447],[47.39,8.11],[47.3885,8.175],[47.395,8.26],[47.405,8.33],[47.408,8.41],[47.398,8.47],[47.388,8.51],[47.3779,8.5403]]},
+ oltenBasel:{minor:false, pts:[[47.3519,7.9077],[47.39,7.89],[47.43,7.85],[47.464,7.809],[47.4842,7.7347],[47.5,7.7],[47.522,7.645],[47.535,7.61],[47.5476,7.5906]]},
+ solothurnBern:{minor:true, pts:[[47.2079,7.5372],[47.16,7.52],[47.11,7.49],[47.06,7.47],[47.02,7.46],[46.98,7.45],[46.949,7.4393]]},
+ solothurnOlten:{minor:true, pts:[[47.2079,7.5372],[47.23,7.61],[47.26,7.69],[47.29,7.77],[47.32,7.85],[47.3519,7.9077]]},
+ bernBiel:{minor:true, pts:[[46.949,7.4393],[46.98,7.42],[47.02,7.38],[47.074,7.306],[47.11,7.27],[47.137,7.247]]},
+ baselBad:{minor:true, pts:[[47.5476,7.5906],[47.556,7.598],[47.5675,7.607],[47.5789,7.6459]]},
+ zhTram:{minor:true, pts:[[47.3779,8.5403],[47.376,8.547],[47.3746,8.5511],[47.3721,8.5523]]},
+ baselTram:{minor:true, pts:[[47.5476,7.5906],[47.551,7.595],[47.556,7.6],[47.5637,7.6009],[47.5657,7.602]]},
+ zhWollishofen:{minor:true, pts:[[47.3779,8.5403],[47.366,8.535],[47.355,8.531],[47.3403,8.531]]},
+ zhAffoltern:{minor:true, pts:[[47.3779,8.5403],[47.39,8.525],[47.4,8.515],[47.4183,8.5065]]}
+};
+const WLABELS = [
+ ["Zürichsee",47.285,8.648],["Thunersee",46.716,7.745],["Bielersee",47.098,7.152],["Neuenburgersee",46.898,6.845]
+];
+const CTX = [
+ ["Bern",46.949,7.4393,"big"],["Zürich",47.3779,8.5403,"big"],["Basel",47.5476,7.5906,"big"],
+ ["Fribourg",46.8062,7.162,"mid"],["Thun",46.758,7.628,"mid"],["Biel",47.137,7.247,"mid"],
+ ["Luzern",47.0502,8.3093,"mid"],["Solothurn",47.2079,7.5372,"mid"],["Olten",47.3519,7.9077,"mid"],
+ ["Aarau",47.3925,8.0447,"mid"],["Winterthur",47.5,8.724,"mid"],
+ ["Burgdorf",47.0591,7.6273,"sm"],["Liestal",47.4842,7.7347,"sm"],["Langenthal",47.212,7.788,"sm"],
+ ["Lenzburg",47.3885,8.175,"sm"],["Baden",47.473,8.306,"sm"],["Schwarzenburg",46.818,7.344,"sm"],
+ ["Münsingen",46.873,7.561,"sm"],["Rapperswil",47.227,8.818,"sm"]
+];
+
+/* ---------- our fixed points ---------- */
+const FIXED = [
+ {id:"work",  name:"Your clinic", sub:"Kehrsatz, 4 days a week", lat:46.9101, lon:7.4368, kind:"work"},
+ {id:"home",  name:"Today's flat", sub:"Seftigenstrasse, Wabern", lat:46.9291, lon:7.4341, kind:"home"},
+ {id:"par1",  name:"Parents", sub:"Kehrsatz", lat:46.9139, lon:7.4413, kind:"heart"},
+ {id:"par2",  name:"Parents", sub:"Niederscherli", lat:46.8969, lon:7.3985, kind:"heart"}
+];
+const CLINICS = {
+ bern:  {name:"ZMK Bern", sub:"Freiburgstrasse 7, by the Inselspital", lat:46.9478, lon:7.4291},
+ zurich:{name:"ZZM Zürich", sub:"Plattenstrasse 11, tram stop Platte", lat:47.3721, lon:8.5523},
+ basel: {name:"UZB Basel", sub:"Mattenstrasse 40, by the Messe", lat:47.5657, lon:7.602}
+};
+
+/* ---------- candidates ---------- */
+const CANDS = {
+bern:[
+ {id:"kehrsatz", name:"Kehrsatz", badge:"top", lat:46.9112, lon:7.4337, her:8, him:35,
+  r35:"1500 to 1950", r45:"1800 to 2350",
+  tag:"Work next door, family next door",
+  why:"Village life at the foot of the Gurten. Your commute becomes a short walk, one set of parents lives around the corner, and the S3 and S31 take Noah into Bern every quarter of an hour.",
+  watch:"Choose a flat away from the main road through the village. Evenings here are properly quiet ones."},
+ {id:"spiegel", name:"Spiegel", badge:"top", lat:46.9321, lon:7.4243, her:20, him:30,
+  r35:"1600 to 2050", r45:"1950 to 2450",
+  tag:"Leafy slope between the city and Kehrsatz",
+  why:"Sunny family streets on the hillside, bus 19 into town for Noah, and a short walk down to the S3 at Kehrsatz Nord for you. Very much the calm, friendly feel you asked for.",
+  watch:"Few flats come up, so set the alert early. The hill makes walks home a tiny workout."},
+ {id:"wabern2", name:"Wabern, quiet side", badge:"good", lat:46.9284, lon:7.4407, her:12, him:25,
+  r35:"1650 to 2100", r45:"2000 to 2500",
+  tag:"Keep the place you love, lose the noise",
+  why:"Everything that made Wabern ideal stays: Eichholz and the Aare, the Gurten funicular, tram 9. Two streets away from Seftigenstrasse the noise simply stops.",
+  watch:"You know the lesson: check every address against the road and visit at evening rush before signing."},
+ {id:"weissenbuehl", name:"Weissenbühl", badge:"good", lat:46.9352, lon:7.4291, her:15, him:15,
+  r35:"1800 to 2300", r45:"2200 to 2800",
+  tag:"City life with an S3 stop of its own",
+  why:"Marzili and the Aare nearby, cafes and city evenings, and still one quick train ride from Kehrsatz. The side streets between the lines are calmer than you would guess.",
+  watch:"4.5 rooms often drift past the budget here. A generous 3.5 is the realistic find."},
+ {id:"liebefeld", name:"Liebefeld", badge:"good", lat:46.9346, lon:7.4162, her:30, him:25,
+  r35:"1650 to 2100", r45:"2000 to 2500",
+  tag:"Young families, and the S6 runs toward Niederscherli",
+  why:"A lively little center full of young families, and the same train line reaches both Bern and the Niederscherli parents directly. Lots of newer family flats.",
+  watch:"Your ride to Kehrsatz is the awkward diagonal, about half an hour by bus and train. An Ebike turns it into 15 minutes."},
+ {id:"koeniz", name:"Köniz and Schliern", badge:"good", lat:46.922, lon:7.4118, her:30, him:25,
+  r35:"1550 to 2000", r45:"1850 to 2350",
+  tag:"Real village centers with everything in reach",
+  why:"Schools, pools, the S6 and bus 10, and you are halfway to Niederscherli already. Schliern above Köniz is especially calm and green.",
+  watch:"Same awkward diagonal to Kehrsatz as Liebefeld. Fine with a Velo, tedious by bus."},
+ {id:"belp", name:"Belp", badge:"good", lat:46.8921, lon:7.4986, her:15, him:38,
+  r35:"1400 to 1800", r45:"1700 to 2200",
+  tag:"The most space for the money on the S3",
+  why:"Old village core, Aare meadows, and two train stops from your clinic. For a family sized flat under 2200 this is the strongest address on the line.",
+  watch:"Noah lands near the top of his range at rush hour, and evenings are village evenings."},
+ {id:"niederscherli", name:"Niederscherli", badge:"good", lat:46.899, lon:7.3962, her:40, him:35,
+  r35:"1350 to 1750", r45:"1650 to 2100",
+  tag:"Countryside, with parents across the street",
+  why:"Deep calm, the S6 straight into Bern, and grandparents next door the day a baby arrives. Cheapest family flats of the whole Bern belt.",
+  watch:"Both commutes are middling: you ride via Bern or take the Ebike over the hill. You trade minutes for support."},
+ {id:"fribourg", name:"Fribourg", badge:"wild", lat:46.8062, lon:7.162, her:58, him:45,
+  r35:"1450 to 1900", r45:"1750 to 2250",
+  tag:"The city you love, if hearts outvote minutes",
+  why:"Fast trains to Bern run every few minutes, rents are gentler than in Bern, and it is, well, Fribourg. Bilingual, beautiful, alive.",
+  watch:"Both of you become daily commuters and the parents move 50 minutes away. Ride one grey Tuesday before deciding with your hearts."}
+],
+zurich:[
+ {id:"aarau", name:"Aarau", badge:"top", lat:47.3925, lon:8.0447, her:70, him:48,
+  r35:"1600 to 2100", r45:"1950 to 2500",
+  tag:"The midpoint with the most life in it",
+  why:"A lovely old town with the famous painted gables, calm family quarters like Gönhard and Zelgli, and everything walkable. Noah reaches the ZZM in about 50 minutes, you reach Kehrsatz in about 70.",
+  watch:"Your four Kehrsatz days are long ones. Plan them tightly and keep the other days close to home."},
+ {id:"olten_z", name:"Olten", badge:"top", lat:47.3519, lon:7.9077, her:52, him:52,
+  r35:"1350 to 1750", r45:"1650 to 2150",
+  tag:"Fastest trains, lowest rents, fair to both",
+  why:"Under half an hour to Bern, Zürich and Basel alike, every few minutes. The old town on the Aare is far better than its reputation, and rents leave real air in the budget.",
+  watch:"The town is plainer than its neighbors. Look at the old town, the Aare side and the Säli quarter first."},
+ {id:"burgdorf_z", name:"Burgdorf", badge:"good", lat:47.0591, lon:7.6273, her:45, him:80,
+  r35:"1400 to 1850", r45:"1700 to 2200",
+  tag:"A Zähringer old town, Bern kept close",
+  why:"Castle, sandstone lanes, a small Fribourg feeling. You stay 45 minutes from your clinic and under an hour from the parents.",
+  watch:"Noah would ride about 1h20 door to door, five days a week, for four years. Only fair if he truly prefers a Bern base over sleep."},
+ {id:"wollishofen", name:"Zürich Wollishofen", badge:"good", lat:47.3403, lon:8.531, her:100, him:30,
+  r35:"2300 to 2900", r45:"mostly above 3000",
+  tag:"Calm lakeside living inside the city",
+  why:"Lake mornings, leafy streets, families everywhere, and quick trams up to the Platte for Noah.",
+  watch:"Your Kehrsatz days become 100 minutes each way, and the budget stretches past 2500. Only with truly flexible day shapes."},
+ {id:"affoltern", name:"Zürich Affoltern", badge:"good", lat:47.4183, lon:8.5065, her:100, him:35,
+  r35:"2000 to 2500", r45:"2400 to 3000",
+  tag:"The budget door into the city",
+  why:"Newer family flats at the green edge of town, fast trains to the main station. One of the few city quarters where 2500 still buys family space.",
+  watch:"Same 100 minute rides for you, and the quarter is practical rather than pretty."}
+],
+basel:[
+ {id:"olten_b", name:"Olten", badge:"top", lat:47.3519, lon:7.9077, her:52, him:50,
+  r35:"1350 to 1750", r45:"1650 to 2150",
+  tag:"Both of you under the hour, every day",
+  why:"26 minutes to Bern, 26 to Basel, from the same platform. The crossroads of the whole plan, and the one address that also survives a Zürich yes.",
+  watch:"Plainer surroundings, so choose the street with care: old town, Aare side or the Säli quarter."},
+ {id:"gundeli", name:"Basel Gundeldingen", badge:"top", lat:47.5417, lon:7.5921, her:85, him:28,
+  r35:"1800 to 2300", r45:"2200 to 2800",
+  tag:"City life right behind the station",
+  why:"Your train days start eight minutes from the front door. Markets, quiet grid streets toward Margarethen, young families, and Noah simply trams across town to the UZB.",
+  watch:"Pick the calm blocks away from Güterstrasse, and expect 4.5 rooms to touch the top of the budget."},
+ {id:"hirzbrunnen", name:"Basel Hirzbrunnen", badge:"good", lat:47.5731, lon:7.6178, her:95, him:12,
+  r35:"1700 to 2200", r45:"2100 to 2600",
+  tag:"Garden streets, Noah walks to work",
+  why:"A green garden city quarter beside the Lange Erlen park, and the UZB is around the corner. Wonderfully family shaped.",
+  watch:"Your side grows to about 1h35 door to door. Fair only if your Kehrsatz days can flex."},
+ {id:"riehen", name:"Riehen", badge:"good", lat:47.5788, lon:7.6459, her:105, him:25,
+  r35:"1700 to 2250", r45:"2100 to 2700",
+  tag:"The family village with a world class museum",
+  why:"Forest edge, schools, deep calm, the Fondation Beyeler for rainy Sundays. The S6 brings Noah to the Badischer Bahnhof in minutes.",
+  watch:"The far side of Basel for your trains. A place for the chapter when your Kehrsatz days shrink."},
+ {id:"liestal", name:"Liestal", badge:"good", lat:47.4842, lon:7.7347, her:75, him:38,
+  r35:"1450 to 1850", r45:"1750 to 2250",
+  tag:"Small Stedtli, small rents, short hop to Basel",
+  why:"Quick trains to Basel, an old lane or two in the center, and family sized flats well inside the budget.",
+  watch:"Honestly practical more than romantic. Visit before you commit your daily life to it."},
+ {id:"solothurn", name:"Solothurn", badge:"wild", lat:47.2079, lon:7.5372, her:65, him:70,
+  r35:"1400 to 1800", r45:"1700 to 2200",
+  tag:"The most Fribourg feeling outside Fribourg",
+  why:"A baroque old town on the Aare that counts everything in elevens, direct trains to Bern, and direct trains to Zürich too if plans ever change.",
+  watch:"Noah changes trains in Olten five days a week, about 70 minutes each way. Fall in love on a visit first, then decide."}
+]
+};
+
+/* ---------- frames ---------- */
+const FRAMES = {
+ start:[["Everything",[46.7,6.95,47.66,8.78]]],
+ bern:[["Bern region",[46.868,7.33,46.985,7.56]],["With Fribourg",[46.77,7.09,46.99,7.56]]],
+ zurich:[["Whole corridor",[46.86,7.32,47.47,8.64]],["Zürich city",[47.32,8.44,47.44,8.62]],["Bern region",[46.868,7.33,46.985,7.56]]],
+ basel:[["Whole corridor",[46.86,7.3,47.63,8.0]],["Basel city",[47.515,7.54,47.605,7.69]],["Bern region",[46.868,7.33,46.985,7.56]]]
+};
+const CORRIDORS = {
+ start:[], bern:["guerbetal","s6"], zurich:["bernOlten","oltenZh","guerbetal"], basel:["bernOlten","oltenBasel","guerbetal"]
+};
+const ACC = {bern:"var(--bern)", zurich:"var(--zurich)", basel:"var(--basel)", start:"var(--her)"};
+
+/* ---------- svg helpers ---------- */
+const svg = document.getElementById("map");
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function pathFrom(pts, close){
+  let d = "";
+  pts.forEach((p,i)=>{ const [x,y]=P(p[0],p[1]); d += (i? "L":"M") + x.toFixed(1) + " " + y.toFixed(1); });
+  return d + (close? "Z":"");
+}
+const layers = {};
+["water","rails","commute","ctx","fixed","clinics","cands"].forEach(n=>{ layers[n] = el("g",{id:"g_"+n}, svg); });
+
+/* water */
+for(const k in LAKES) el("path",{d:pathFrom(LAKES[k],true), class:"lake"}, layers.water);
+for(const k in RIVERS) el("path",{d:pathFrom(RIVERS[k],false), class:"river"}, layers.water);
+WLABELS.forEach(([t,la,lo])=>{
+  marker(layers.water, la, lo, "wl", 0.3, p=>{
+    const tx = el("text",{x:0, y:0, class:"wlabel", "text-anchor":"middle"}, p);
+    tx.textContent = t;
+  });
+});
+/* rails */
+const railEls = {};
+for(const k in RAILS){
+  railEls[k] = el("path",{d:pathFrom(RAILS[k].pts,false), class:"rail"+(RAILS[k].minor?" minor":"")}, layers.rails);
+}
+
+/* markers ------------------------------------------------------ */
+const markers = []; // {g, inner, x, y, minZ}
+function marker(parent, lat, lon, cls, minZ, build, labelText, subText, lab){
+  lab = lab || {};
+  const [x,y] = P(lat,lon);
+  const g = el("g",{class:"mk "+cls, transform:`translate(${x} ${y})`}, parent);
+  const inner = el("g",{}, g); // counter scaled
+  build(inner);
+  if(labelText){
+    const anchor = lab.anchor || "middle";
+    const lx = lab.x!==undefined? lab.x : 0;
+    const ly = lab.y!==undefined? lab.y : -14;
+    const t = el("text",{x:lx, y:ly, "text-anchor":anchor}, inner);
+    t.textContent = labelText;
+    if(subText){
+      const s = el("text",{x:lx, y:ly+12, "text-anchor":anchor, class:"sub"}, inner);
+      s.textContent = subText;
+    }
+  }
+  markers.push({g, inner, x, y, minZ: minZ||0});
+  return g;
+}
+/* glyph builders */
+const glyph = {
+ star(p, fill){ el("circle",{r:8.5, fill, stroke:"var(--panel)", "stroke-width":1.6}, p);
+   el("path",{d:"M0 -4.6 L1.35 -1.55 L4.6 -1.25 L2.15 0.95 L2.85 4.2 L0 2.5 L-2.85 4.2 L-2.15 0.95 L-4.6 -1.25 L-1.35 -1.55 Z", fill:"var(--panel)"}, p); },
+ dot(p){ el("circle",{r:6, fill:"var(--ink)", stroke:"var(--panel)", "stroke-width":1.6}, p);
+   el("circle",{r:2.1, fill:"var(--panel)"}, p); },
+ wild(p){ el("circle",{r:6.4, fill:"var(--map)", stroke:"var(--wild)", "stroke-width":1.8, "stroke-dasharray":"3 2.4"}, p);
+   el("circle",{r:2.1, fill:"var(--wild)"}, p); },
+ cross(p){ el("rect",{x:-7.5, y:-7.5, width:15, height:15, rx:4.5, fill:"var(--her)", stroke:"var(--panel)", "stroke-width":1.6}, p);
+   el("path",{d:"M-1.5 -4.5 H1.5 V-1.5 H4.5 V1.5 H1.5 V4.5 H-1.5 V1.5 H-4.5 V-1.5 H-1.5 Z", fill:"var(--panel)"}, p); },
+ cap(p, fill){ el("rect",{x:-8, y:-8, width:16, height:16, rx:5, fill, stroke:"var(--panel)", "stroke-width":1.6}, p);
+   el("path",{d:"M-5.5 -1.2 L0 -4.2 L5.5 -1.2 L0 1.8 Z", fill:"var(--panel)"}, p);
+   el("path",{d:"M-3 0.2 V2.6 C-3 3.8 3 3.8 3 2.6 V0.2", fill:"none", stroke:"var(--panel)", "stroke-width":1.3}, p);
+   el("line",{x1:5.5, y1:-1.2, x2:5.5, y2:2.2, stroke:"var(--panel)", "stroke-width":1.1}, p); },
+ heart(p){ el("path",{d:"M0 4.8 C-5.6 0.8 -6 -2.6 -3.4 -4.1 C-1.7 -5.1 -0.3 -3.9 0 -2.9 C0.3 -3.9 1.7 -5.1 3.4 -4.1 C6 -2.6 5.6 0.8 0 4.8 Z", fill:"var(--heart)", stroke:"var(--panel)", "stroke-width":1.2}, p); },
+ house(p){ el("path",{d:"M-6 0 L0 -5.8 L6 0 V6 H1.8 V1.8 H-1.8 V6 H-6 Z", fill:"var(--home)", stroke:"var(--panel)", "stroke-width":1.2}, p); }
+};
+/* context cities; the three big ones get labels nudged away from the clinic caps */
+const CTXLAB = {Bern:{anchor:"start",x:9,y:11}, "Zürich":{anchor:"end",x:-9,y:-8}, Basel:{anchor:"end",x:-9,y:11}};
+CTX.forEach(([name,la,lo,sz])=>{
+  const [x,y]=P(la,lo);
+  const g = el("g",{class:"ctx "+sz, transform:`translate(${x} ${y})`}, layers.ctx);
+  const inner = el("g",{}, g);
+  el("circle",{r: sz==="big"?3.4: sz==="mid"?2.6:2}, inner);
+  const lab = CTXLAB[name] || {anchor:"middle", x:0, y:-7};
+  const t = el("text",{x:lab.x, y:lab.y, "text-anchor":lab.anchor}, inner);
+  t.textContent = name;
+  markers.push({g, inner, x, y, minZ: sz==="big"?0: sz==="mid"?0.28:0.75, ctxName:name});
+});
+/* Gurten hill */
+(function(){
+  const [x,y]=P(46.9203,7.4405);
+  const g = el("g",{class:"ctx sm", transform:`translate(${x} ${y})`}, layers.ctx);
+  const inner = el("g",{}, g);
+  el("path",{d:"M-7 3 L0 -4 L7 3 Z", fill:"none", stroke:"var(--faint)", "stroke-width":1.3}, inner);
+  const t = el("text",{x:0, y:14, "text-anchor":"middle"}, inner); t.textContent = "Gurten";
+  markers.push({g, inner, x, y, minZ:2.2});
+})();
+/* fixed: labels pushed sideways so the tight Kehrsatz cluster stays readable */
+const FIXLAB = {work:{anchor:"end",x:-13,y:-2}, par1:{anchor:"start",x:13,y:-2},
+                par2:{anchor:"start",x:13,y:-2}, home:{anchor:"end",x:-13,y:-2}};
+FIXED.forEach(f=>{
+  marker(layers.fixed, f.lat, f.lon, "fixed", 2.0,
+    p=>{ glyph[f.kind==="work"?"cross": f.kind==="home"?"house":"heart"](p); },
+    f.name, f.sub, FIXLAB[f.id]);
+  markers[markers.length-1].hideZ = 1.6; // the Kehrsatz cluster only reads at close zoom
+});
+/* clinics */
+const CLILAB = {bern:{anchor:"end",x:-13,y:-3}, zurich:{anchor:"start",x:13,y:-3}, basel:{anchor:"start",x:13,y:-3}};
+const clinicEls = {};
+["bern","zurich","basel"].forEach(cid=>{
+  const c = CLINICS[cid];
+  clinicEls[cid] = marker(layers.clinics, c.lat, c.lon, "clinic c_"+cid, 0.55,
+    p=>{ glyph.cap(p, ACC[cid]); }, c.name, null, CLILAB[cid]);
+});
+
+/* ---------- view state / camera ---------- */
+let view = {x:0, y:0, w:100, h:100};
+let anim = null;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function clientSize(){ const r = svg.getBoundingClientRect(); return [Math.max(r.width,1), Math.max(r.height,1)]; }
+function applyView(){
+  svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.w} ${view.h}`);
+  const [cw,ch] = clientSize();
+  const k = Math.max(view.w/cw, view.h/ch); // world units per screen px
+  const z = 1/k;
+  markers.forEach(m=>{
+    m.inner.setAttribute("transform", `scale(${k.toFixed(4)})`);
+    m.g.classList.toggle("lbl-off", z < m.minZ);
+    m.g.style.display = (m.suppressed || (m.hideZ && z < m.hideZ)) ? "none" : "";
+  });
+  document.querySelectorAll("#g_commute .pill > g").forEach(p=>{
+    p.setAttribute("transform", `scale(${k.toFixed(4)})`);
+  });
+}
+function boundsRect(b){ // [latMin, lonMin, latMax, lonMax] -> world rect
+  const [x1,y1] = P(b[2], b[1]); // top left
+  const [x2,y2] = P(b[0], b[3]); // bottom right
+  return {x:x1, y:y1, w:x2-x1, h:y2-y1};
+}
+function fitRect(r, pad){
+  pad = pad===undefined? 0.1 : pad;
+  const [cw,ch] = clientSize();
+  let w = r.w*(1+pad*2), h = r.h*(1+pad*2);
+  let cx = r.x + r.w/2, cy = r.y + r.h/2;
+  const want = cw/ch;
+  if(w/h < want) w = h*want; else h = w/want;
+  return {x:cx-w/2, y:cy-h/2, w, h};
+}
+function setView(v, animate){
+  if(anim) cancelAnimationFrame(anim.raf), anim = null;
+  if(!animate || reduceMotion){ view = v; applyView(); return; }
+  const from = {...view}, dur = 650, t0 = performance.now();
+  const lw0 = Math.log(from.w), lw1 = Math.log(v.w);
+  const c0 = [from.x+from.w/2, from.y+from.h/2], c1 = [v.x+v.w/2, v.y+v.h/2];
+  function step(t){
+    let u = Math.min(1,(t-t0)/dur); u = u<.5? 4*u*u*u : 1-Math.pow(-2*u+2,3)/2;
+    const w = Math.exp(lw0+(lw1-lw0)*u), h = w*(v.h/v.w);
+    const cx = c0[0]+(c1[0]-c0[0])*u, cy = c0[1]+(c1[1]-c0[1])*u;
+    view = {x:cx-w/2, y:cy-h/2, w, h};
+    applyView();
+    if(u<1) anim = {raf:requestAnimationFrame(step)}; else anim = null;
+  }
+  anim = {raf:requestAnimationFrame(step)};
+}
+function flyBounds(b, pad){ setView(fitRect(boundsRect(b), pad), true); }
+
+/* pan and zoom */
+const pointers = new Map();
+let dragStart = null;
+svg.addEventListener("pointerdown", e=>{
+  svg.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if(pointers.size===1) dragStart = {x:e.clientX, y:e.clientY, vx:view.x, vy:view.y, moved:false};
+  svg.classList.add("dragging");
+});
+svg.addEventListener("pointermove", e=>{
+  if(!pointers.has(e.pointerId)) return;
+  const prev = [...pointers.values()];
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  const [cw] = clientSize();
+  const k = view.w/cw;
+  if(pointers.size===1 && dragStart){
+    const dx = e.clientX-dragStart.x, dy = e.clientY-dragStart.y;
+    if(Math.abs(dx)+Math.abs(dy)>3) dragStart.moved = true;
+    if(anim) cancelAnimationFrame(anim.raf), anim=null;
+    view.x = dragStart.vx - dx*k; view.y = dragStart.vy - dy*k;
+    applyView();
+  } else if(pointers.size===2){
+    const cur = [...pointers.values()];
+    const d0 = Math.hypot(prev[0][0]-prev[1][0], prev[0][1]-prev[1][1]);
+    const d1 = Math.hypot(cur[0][0]-cur[1][0], cur[0][1]-cur[1][1]);
+    if(d0>0 && d1>0) zoomAt((cur[0][0]+cur[1][0])/2, (cur[0][1]+cur[1][1])/2, d1/d0);
+    dragStart = null;
+  }
+});
+let justDragged = false;
+function endPointer(e){
+  pointers.delete(e.pointerId);
+  if(pointers.size===0){
+    svg.classList.remove("dragging");
+    justDragged = !!(dragStart && dragStart.moved);
+    dragStart = null;
+  }
+}
+svg.addEventListener("pointerup", endPointer);
+svg.addEventListener("pointercancel", endPointer);
+svg.addEventListener("click", e=>{
+  if(justDragged){ justDragged = false; return; }
+  if(e.target === svg || e.target.closest("#g_water, #g_rails, #g_ctx")) clearSel();
+});
+svg.addEventListener("wheel", e=>{
+  e.preventDefault();
+  zoomAt(e.clientX, e.clientY, Math.pow(2, -e.deltaY/480));
+},{passive:false});
+svg.addEventListener("dblclick", e=>{ zoomAt(e.clientX, e.clientY, 1.7); });
+function zoomAt(cx, cy, f){
+  if(anim) cancelAnimationFrame(anim.raf), anim=null;
+  const r = svg.getBoundingClientRect();
+  const px = (cx-r.left)/r.width, py = (cy-r.top)/r.height;
+  const wx = view.x+view.w*px, wy = view.y+view.h*py;
+  let w = view.w/f;
+  w = Math.min(Math.max(w, 14), 2600);
+  const h = w*(view.h/view.w);
+  view = {x:wx-w*px, y:wy-h*py, w, h};
+  applyView();
+}
+document.getElementById("zin").onclick = ()=>{ const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1.5); };
+document.getElementById("zout").onclick = ()=>{ const r=svg.getBoundingClientRect(); zoomAt(r.left+r.width/2, r.top+r.height/2, 1/1.5); };
+new ResizeObserver(()=>applyView()).observe(svg);
+
+/* ---------- scenario logic ---------- */
+const app = document.getElementById("app");
+const panel = document.getElementById("panel");
+const framesBox = document.getElementById("frames");
+const detail = document.getElementById("detail");
+const detailBody = document.getElementById("detailBody");
+let SC = "start", selected = null, candEls = {};
+
+function swColor(kind){ return kind==="her"? "var(--her)" : ACC[SC]; }
+function fmtMin(m){ return m>=60? Math.floor(m/60)+"h"+String(m%60).padStart(2,"0") : m+" min"; }
+
+function clearSel(){
+  selected = null;
+  layers.commute.replaceChildren();
+  detail.classList.remove("open");
+  document.querySelectorAll("#map .mk.sel").forEach(m=>m.classList.remove("sel"));
+  document.querySelectorAll(".card.sel").forEach(c=>c.classList.remove("sel"));
+}
+detail.querySelector(".close").onclick = clearSel;
+
+function commuteLine(from, to, kind, label){
+  const [x1,y1] = P(from.lat, from.lon), [x2,y2] = P(to.lat, to.lon);
+  const dx = x2-x1, dy = y2-y1, len = Math.hypot(dx,dy)||1;
+  if(len < 12) return; // next door: a line and pill would only cover the map
+  const mx = (x1+x2)/2 - dy/len*len*0.14, my = (y1+y2)/2 + dx/len*len*0.14;
+  el("path",{d:`M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}`, class:"commute", stroke:swColor(kind)}, layers.commute);
+  const lx = 0.25*x1+0.5*mx+0.25*x2, ly = 0.25*y1+0.5*my+0.25*y2;
+  const holder = el("g",{class:"pill", transform:`translate(${lx} ${ly})`}, layers.commute);
+  const inner = el("g",{}, holder);
+  const t = el("text",{x:0, y:3.5, "text-anchor":"middle"}, inner);
+  t.textContent = label;
+  const wpx = t.getComputedTextLength() + 16;
+  el("rect",{x:-wpx/2, y:-9, width:wpx, height:19, rx:9.5, stroke:swColor(kind)}, inner);
+  inner.appendChild(t); // move text above rect
+  applyView();
+}
+function select(cand, fly){
+  clearSel();
+  selected = cand.id;
+  candEls[cand.id] && candEls[cand.id].classList.add("sel");
+  const card = document.querySelector(`.card[data-id="${cand.id}"]`);
+  if(card){ card.classList.add("sel"); }
+  const work = FIXED[0], clinic = CLINICS[SC==="start"? "bern" : SC];
+  commuteLine(cand, work, "her", "You "+fmtMin(cand.her));
+  if(SC!=="start") commuteLine(cand, clinic, "him", "Noah "+fmtMin(cand.him));
+  detailBody.innerHTML = `
+    <h3>${cand.name}</h3>
+    <p class="tag">${cand.tag}</p>
+    <div class="stats">
+      <div class="stat"><span class="dot" style="background:var(--her)"></span><span><b>${fmtMin(cand.her)}</b> you, door to door to Kehrsatz</span></div>
+      ${SC!=="start"? `<div class="stat"><span class="dot" style="background:${ACC[SC]}"></span><span><b>${fmtMin(cand.him)}</b> Noah, door to door to the clinic</span></div>`:""}
+      <div class="stat"><span class="dot" style="background:var(--faint)"></span><span><b>CHF ${cand.r35}</b> for 3.5 rooms, <b>${cand.r45}</b> for 4.5</span></div>
+    </div>
+    <p class="why">${cand.why}</p>
+    <p class="watch">${cand.watch}</p>`;
+  detail.classList.add("open");
+  if(fly){
+    const pts = [[cand.lat,cand.lon],[clinic.lat,clinic.lon]];
+    const dKm = Math.hypot(...P(cand.lat,cand.lon).map((v,i)=>v-P(clinic.lat,clinic.lon)[i]));
+    if(dKm > 130) pts.push([work.lat,work.lon]);
+    const lats = pts.map(p=>p[0]), lons = pts.map(p=>p[1]);
+    flyBounds([Math.min(...lats), Math.min(...lons), Math.max(...lats), Math.max(...lons)], 0.22);
+  }
+}
+function badgeName(b){ return b==="top"? "Top pick" : b==="wild"? "Wildcard" : "Good option"; }
+
+const LABEL_BELOW = {kehrsatz:1, wabern2:1, wollishofen:1};
+function renderCands(){
+  layers.cands.replaceChildren();
+  for(let i=markers.length-1;i>=0;i--){ if(markers[i].cand) markers.splice(i,1); }
+  candEls = {};
+  if(SC==="start") return;
+  CANDS[SC].forEach(c=>{
+    const g = marker(layers.cands, c.lat, c.lon, "cand", 0.5,
+      p=>{ el("circle",{r:12, fill:"transparent"}, p);
+           if(c.badge==="top") glyph.star(p, "var(--gold)");
+           else if(c.badge==="wild") glyph.wild(p);
+           else glyph.dot(p);
+           el("circle",{r:11, class:"halo"}, p); },
+      c.name, null, LABEL_BELOW[c.id]? {y:24} : undefined);
+    g.setAttribute("role","button"); g.setAttribute("tabindex","0");
+    g.setAttribute("aria-label", c.name);
+    markers[markers.length-1].cand = true;
+    g.addEventListener("click", e=>{ e.stopPropagation(); select(c, false); });
+    g.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(c, false); } });
+    candEls[c.id] = g;
+  });
+  // hide context dots that sit under candidates
+  markers.forEach(m=>{
+    if(!m.ctxName) return;
+    m.suppressed = CANDS[SC].some(c=>{ const [x,y]=P(c.lat,c.lon); return Math.hypot(x-m.x,y-m.y) < 6; });
+  });
+}
+function renderFrames(){
+  framesBox.replaceChildren();
+  FRAMES[SC].forEach(([name,b],i)=>{
+    const btn = document.createElement("button");
+    btn.textContent = name;
+    if(i===0) btn.classList.add("on");
+    btn.onclick = ()=>{ framesBox.querySelectorAll("button").forEach(x=>x.classList.remove("on")); btn.classList.add("on"); flyBounds(b); };
+    framesBox.appendChild(btn);
+  });
+}
+function renderRails(){
+  for(const k in railEls){ railEls[k].classList.remove("hot"); railEls[k].style.stroke = ""; }
+  CORRIDORS[SC].forEach(k=>{ railEls[k].classList.add("hot"); railEls[k].style.stroke = ACC[SC]; });
+}
+function renderClinics(){
+  ["bern","zurich","basel"].forEach(cid=>{
+    clinicEls[cid].classList.toggle("dim", SC!=="start" && SC!==cid);
+  });
+}
+
+/* ---------- panel content ---------- */
+const sw = c => `<span class="sw" style="background:${c}"></span>`;
+function cardsHtml(list){
+  return `<div class="cards">` + list.map(c=>`
+    <button class="card" data-id="${c.id}">
+      <div class="top"><span class="name">${c.name}</span><span class="badge ${c.badge}">${badgeName(c.badge)}</span></div>
+      <p class="tag">${c.tag}</p>
+      <div class="mins">
+        <span>${sw("var(--her)")}You <b>${fmtMin(c.her)}</b></span>
+        <span>${sw(ACC[SC])}Noah <b>${fmtMin(c.him)}</b></span>
+        <span>4.5 rooms <b>${c.r45}</b></span>
+      </div>
+    </button>`).join("") + `</div>`;
+}
+const legendHtml = `
+  <div class="legend">
+    <div><svg width="16" height="16"><circle cx="8" cy="8" r="6.5" fill="var(--gold)"/><path d="M8 4.2 L9 6.6 L11.6 6.8 L9.7 8.5 L10.2 11 L8 9.7 L5.8 11 L6.3 8.5 L4.4 6.8 L7 6.6 Z" fill="var(--panel)"/></svg>Top pick</div>
+    <div><svg width="16" height="16"><circle cx="8" cy="8" r="5" fill="var(--ink)"/><circle cx="8" cy="8" r="1.8" fill="var(--panel)"/></svg>Good option</div>
+    <div><svg width="16" height="16"><circle cx="8" cy="8" r="5.5" fill="none" stroke="var(--wild)" stroke-width="1.8" stroke-dasharray="3 2.2"/></svg>Wildcard</div>
+    <div><svg width="16" height="16"><rect x="1.5" y="1.5" width="13" height="13" rx="4" fill="var(--her)"/><path d="M7 4.5 H9 V7 H11.5 V9 H9 V11.5 H7 V9 H4.5 V7 H7 Z" fill="var(--panel)"/></svg>Your clinic, 4 days</div>
+    <div><svg width="16" height="16"><rect x="1.5" y="1.5" width="13" height="13" rx="4" fill="var(--zurich)"/><path d="M3.5 7 L8 4.5 L12.5 7 L8 9.5 Z" fill="var(--panel)"/></svg>KFO clinic, 5 days</div>
+    <div><svg width="16" height="16"><path d="M8 13 C3.4 9.7 3 6.9 5.2 5.7 C6.6 4.9 7.7 5.9 8 6.7 C8.3 5.9 9.4 4.9 10.8 5.7 C13 6.9 12.6 9.7 8 13 Z" fill="var(--heart)"/></svg>Parents</div>
+    <div><svg width="16" height="16"><path d="M2.5 8 L8 3 L13.5 8 V13.5 H9.7 V10 H6.3 V13.5 H2.5 Z" fill="var(--home)"/></svg>Today's flat</div>
+    <div><svg width="16" height="16"><line x1="1" y1="8" x2="15" y2="8" stroke="var(--rail)" stroke-width="1.6" stroke-dasharray="5 3"/></svg>Rail line</div>
+  </div>`;
+
+const PANELS = {
+start: () => `
+  <p class="verdict">Bern would be the easy yes. Zürich and Basel work too, <em>with the right address</em>.</p>
+  <p class="lede">Noah applied for the four year KFO specialization in Bern, Zürich and Basel. Tap a scenario above to see where you could live in each case. Everything below stays true in all three.</p>
+  <h4>The fixed points of your life</h4>
+  <ul class="givens">
+    <li><span class="dot" style="background:var(--her)"></span>Your clinic in Kehrsatz, four days a week, whatever happens. Keep this ride humane.</li>
+    <li><span class="dot" style="background:var(--zurich)"></span>Noah at his clinic five days a week for four years. The five day person gets the shorter commute.</li>
+    <li><span class="dot" style="background:var(--heart)"></span>Parents in Kehrsatz and Niederscherli. Priceless once a baby arrives, so distance to them is a real cost.</li>
+    <li><span class="dot" style="background:var(--home)"></span>No car, ever seen in this plan. Every address must work by train, tram, bus and Velo.</li>
+    <li><span class="dot" style="background:var(--wild)"></span>Budget 2000 to 2500 for a family sized flat, on a calm street. Never again a Seftigenstrasse.</li>
+  </ul>
+  <h4>The three futures at a glance</h4>
+  <table class="cmp">
+    <tr><th>Scenario</th><th>Joint income</th><th>Our pick</th><th class="n">You</th><th class="n">Noah</th></tr>
+    <tr><td>Bern</td><td class="n">about 10000</td><td>Kehrsatz or Spiegel</td><td class="n">5 to 20 min</td><td class="n">30 min</td></tr>
+    <tr><td>Zürich</td><td class="n">about 14000</td><td>Aarau, or Olten</td><td class="n">1h10</td><td class="n">50 min</td></tr>
+    <tr><td>Basel</td><td class="n">7000 plus tbd</td><td>Olten, or Gundeldingen</td><td class="n">55 min</td><td class="n">50 min</td></tr>
+  </table>
+  <h4>One address survives two futures</h4>
+  <div class="money">
+    <p><b>Olten</b> is under half an hour from Bern, Zürich and Basel at once. If you want to start watching flats before any letter arrives, watch Olten. It stays right in either of the away scenarios and is a decent hedge even against none.</p>
+  </div>
+  <h4>Do these this week</h4>
+  <ol class="steps">
+    <li>Nothing to cancel yet. Your three month notice clock only starts once Noah holds a written yes.</li>
+    <li>Set up search alerts for all three scenarios on Flatfox, Homegate and Newhome today. Deleting an alert later costs nothing, missing the right flat costs months.</li>
+    <li>Build the application dossier once, use it three times: employer letters, ID copies, and a fresh debt register extract when you actually apply.</li>
+    <li>Agree the house rule together: five clinic days get the short ride, and nobody signs on a main road again. Check the federal noise map and visit at evening rush, every time.</li>
+  </ol>
+  <h4>Legend</h4>
+  ${legendHtml}
+  <div class="foot">
+    <p>Minutes are door to door estimates for a normal weekday morning, check SBB before trusting any single one. Rents are rough current asking ranges in CHF per month.</p>
+    <p>The full written plan lives in PLAN.md in your Umziehen repository.</p>
+  </div>`,
+bern: () => `
+  <p class="verdict">Stay in the green belt south of Bern, just <em>pick the quiet street this time</em>.</p>
+  <p class="lede">The ZMK sits by the Inselspital, an easy ride from the whole Köniz and Gürbetal side. This is the scenario where work, parents and family plans all pull in the same direction.</p>
+  <h4>The short answer</h4>
+  <div class="chips">
+    <span class="chip">Joint income about <b>10000</b></span>
+    <span class="chip">Rent target <b>2000 to 2400</b></span>
+    <span class="chip">Parents <b>10 to 20 min</b> away</span>
+  </div>
+  <h4>Where to look</h4>
+  ${cardsHtml(CANDS.bern)}
+  <h4>How to play it</h4>
+  <ol class="steps">
+    <li>Say nothing to your landlord until the yes is in writing. Then give notice for the next official term and aim for one overlap month, it buys a calm move.</li>
+    <li>Alerts for Kehrsatz, Spiegel, Wabern, Liebefeld and Köniz: 3.5 to 4.5 rooms, up to 2500. Kehrsatz and Spiegel flats go fast, apply the same day with the ready dossier.</li>
+    <li>Visit only at evening rush and check the federal noise map for every address. Two streets decide between another Seftigenstrasse and real quiet.</li>
+    <li>With Noah at about 3000 during the four years, hold the rent nearer 2000 to 2200 and bank the difference. Bern region childcare vouchers will matter later, another point for staying.</li>
+    <li>Think one chapter ahead: a flat that fits a crib in year two saves you a second move at the worst possible moment.</li>
+  </ol>
+  <h4>Money picture</h4>
+  <div class="money">
+    <p>About 7000 from you and 3000 from Noah. A 2200 flat is a comfortable 22 percent of that, and this is the scenario with the smallest commuting cost in both francs and hours: one local pass instead of two GA.</p>
+  </div>
+  <h4>Legend</h4>
+  ${legendHtml}
+  <div class="foot"><p>Minutes are door to door estimates, rents are rough asking ranges. Full plan in PLAN.md.</p></div>`,
+zurich: () => `
+  <p class="verdict">Move to the middle, <em>not to Zürich</em>.</p>
+  <p class="lede">The ZZM sits up at the Platte, ten minutes above the main station. With your four fixed Kehrsatz days, a flat in Zürich means 100 minute rides for you. A midpoint town keeps you both under about 70.</p>
+  <h4>The short answer</h4>
+  <div class="chips">
+    <span class="chip">Joint income about <b>14000</b>, the richest future</span>
+    <span class="chip">Two GA passes, about <b>4000</b> each a year</span>
+    <span class="chip">Parents about <b>1h</b> from the midpoint</span>
+  </div>
+  <h4>Where to look</h4>
+  ${cardsHtml(CANDS.zurich)}
+  <h4>The third way nobody puts on a map</h4>
+  <div class="money">
+    <p>Keep a Bern belt flat and rent Noah a weekday room near the ZZM for 800 to 1000. Home every weekend, no daily grind, your job and the parents stay close. Couples survive four years of this all the time in Switzerland, but only choose it together and honestly, and revisit it the moment a baby is on the way.</p>
+  </div>
+  <h4>How to play it</h4>
+  <ol class="steps">
+    <li>The day the Zürich yes lands, choose the model first, address second: midpoint town, city flat, or weekday room.</li>
+    <li>Spend one Saturday each in Aarau and Olten. In Aarau walk the old town, then Gönhard and Zelgli. In Olten cross the wooden bridge and walk the Aare side and Säli.</li>
+    <li>Before signing anywhere, ride your own Tuesday once for real: out the door at 6:45 toward Kehrsatz, then judge.</li>
+    <li>Budget the two GA passes without flinching, Noah's Zürich salary carries them and still leaves this the richest scenario by far.</li>
+    <li>Rent, do not buy. The likely landing after the four years is back toward Bern, your clinic and the grandparents, with Noah as a Fachzahnarzt looking at practices.</li>
+    <li>If the city wins anyway, bundle your four days hard, Monday to Thursday, and take the 100 minutes with a book and a deal with yourself.</li>
+  </ol>
+  <h4>Legend</h4>
+  ${legendHtml}
+  <div class="foot"><p>Minutes are door to door estimates, rents are rough asking ranges. Full plan in PLAN.md.</p></div>`,
+basel: () => `
+  <p class="verdict">Olten splits it almost perfectly, <em>Gundeldingen if you want the city years</em>.</p>
+  <p class="lede">The UZB sits by the Messe, a short tram from both Basel stations. Olten keeps you both under the hour. If you would rather actually live in Basel, stay on the station side so your Bern train is an eight minute walk.</p>
+  <h4>The short answer</h4>
+  <div class="chips">
+    <span class="chip">Your <b>7000</b> plus Noah's Basel salary, still unknown</span>
+    <span class="chip">Plan with <b>3000 to 4000</b> until the UZB confirms</span>
+    <span class="chip">Parents about <b>1h</b> from Olten</span>
+  </div>
+  <h4>Where to look</h4>
+  ${cardsHtml(CANDS.basel)}
+  <h4>How to play it</h4>
+  <ol class="steps">
+    <li>Ask the UZB about the assistant salary in the very first conversation. That number decides between midpoint and city more than anything on this map.</li>
+    <li>Same Saturday trick: Olten first, then Gundeldingen between Tellplatz and the Margarethen park, ideally on a market morning.</li>
+    <li>If Basel city wins, one GA for you may be all you need, Noah trams for a few hundred a year. That softens the unknown salary.</li>
+    <li>Watch Olten from today if you like, it is the address that survives both a Basel and a Zürich yes.</li>
+    <li>Rent, do not buy, same logic as Zürich: year five likely points back toward Bern.</li>
+  </ol>
+  <h4>Money picture</h4>
+  <div class="money">
+    <p>In Olten or Liestal the budget is easy even if Noah earns like in Bern. In Basel city hold the line at about 2300 until his salary is confirmed, then loosen if the number is kind.</p>
+  </div>
+  <h4>Legend</h4>
+  ${legendHtml}
+  <div class="foot"><p>Minutes are door to door estimates, rents are rough asking ranges. Full plan in PLAN.md.</p></div>`
+};
+
+function renderPanel(){
+  panel.innerHTML = PANELS[SC]();
+  panel.querySelectorAll(".card").forEach(card=>{
+    const c = CANDS[SC].find(x=>x.id===card.dataset.id);
+    card.addEventListener("click", ()=>select(c, true));
+  });
+  panel.scrollTop = 0;
+}
+function setScenario(s, animate){
+  SC = s;
+  app.className = "s-"+s;
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.s===s));
+  clearSel();
+  renderRails(); renderClinics(); renderCands(); renderFrames(); renderPanel();
+  flyBoundsInit(animate);
+  try{ localStorage.setItem("scenario", s); }catch(e){}
+}
+function flyBoundsInit(animate){
+  const b = FRAMES[SC][0][1];
+  if(animate) flyBounds(b); else setView(fitRect(boundsRect(b)), false);
+}
+document.querySelectorAll("nav button").forEach(b=>{
+  b.addEventListener("click", ()=>setScenario(b.dataset.s, true));
+});
+
+/* boot */
+let start = "start";
+try{ const s = localStorage.getItem("scenario"); if(s && PANELS[s]) start = s; }catch(e){}
+setScenario(start, false);
+</script>
